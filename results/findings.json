@@ -1,0 +1,104 @@
+{
+  "grow": {
+    "days": 14.0,
+    "in_band_pct": 100.0,
+    "ph_min": 6.0,
+    "ph_max": 6.32,
+    "ph_end": 6.21,
+    "acid_mL": 1326,
+    "acid_mL_per_day": 94.7,
+    "corrections": 21,
+    "energy_kWh": 26.1,
+    "growth_index": 7.97,
+    "dry_run_min": 0.0,
+    "lights_h_per_day": 16.0,
+    "pump_h_per_day": 13.4,
+    "fan_h_per_day": 8.2,
+    "humidifier_h_per_day": 0.8,
+    "learned_gain": 0.082,
+    "alarms_seen": 0,
+    "wdt_resets": 0,
+    "loop_max_ms": 25.8
+  },
+  "dosing": {
+    "start_ph": 7.9,
+    "ph_min": 6.0,
+    "ph_end": 6.1,
+    "acid_mL": 676,
+    "acid_theory_mL": 651,
+    "doses": 13,
+    "minutes_to_band": 23.2,
+    "learned_gain": 0.061,
+    "initial_gain": 0.15,
+    "loop_max_ms": 24.8
+  },
+  "low_water": {
+    "dry_run_h": 0.0,
+    "low_water_alarm_h": 103.0,
+    "level_at_alarm_pct": 21.8,
+    "pump_intake_pct": 21.4,
+    "lcd": [
+      "AUT pH6.16 06:00",
+      "!LOW WATER      "
+    ]
+  },
+  "responsiveness": {
+    "pressed": 60,
+    "caught": 60,
+    "caught_pct": 100.0,
+    "latency_mean_ms": 0.06,
+    "latency_max_ms": 0.06,
+    "loop_max_ms": 24.1,
+    "loops_per_s": 929
+  },
+  "faults": {
+    "stuck_high": {
+      "label": "amplifier stuck high (reads pH 11.2)",
+      "acid_mL": 0,
+      "ph_min": 6.02,
+      "ph_end": 6.12,
+      "alarm_after_min": 0.2,
+      "alarms_seen": 2,
+      "lcd": [
+        "AUT pH---- 13:00",
+        "!PH PROBE FAULT "
+      ]
+    },
+    "stuck_plausible": {
+      "label": "probe frozen at a believable 6.9",
+      "acid_mL": 76,
+      "ph_min": 5.42,
+      "ph_end": 5.68,
+      "alarm_after_min": 7.7,
+      "alarms_seen": 4,
+      "lcd": [
+        "AUT pH6.89 13:00",
+        "!DOSING HALTED  "
+      ]
+    },
+    "unplugged": {
+      "label": "electrode unplugged",
+      "acid_mL": 0,
+      "ph_min": 6.02,
+      "ph_end": 6.12,
+      "alarm_after_min": 0.2,
+      "alarms_seen": 2,
+      "lcd": [
+        "AUT pH---- 13:00",
+        "!PH PROBE FAULT "
+      ]
+    }
+  },
+  "calibration": {
+    "default": {
+      "label": "factory default (3.5 pH/V)",
+      "max_error": 0.79,
+      "mean_error": 0.656
+    },
+    "calibrated": {
+      "label": "two-point calibration",
+      "max_error": 0.04,
+      "mean_error": 0.017
+    }
+  }
+}
