@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+sim/build/
+firmware/test/build/
+results/*.png
+.DS_Store
