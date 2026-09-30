@@ -1,0 +1,49 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core:
+    name: controller unit tests (host, sanitizers)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: make -C firmware/test
+
+  simulator:
+    name: simulator + pytest (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: sudo apt-get update && sudo apt-get install -y clang lld
+      - run: pip install -r requirements.txt
+      - run: make -C sim native wasm web
+      - run: pytest -q
+      - run: python -m hydrolab --quick --no-figures
+
+  arduino:
+    name: compile for Arduino Mega 2560
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: arduino/compile-sketches@v1
+        with:
+          fqbn: arduino:avr:mega
+          sketch-paths: |
+            - firmware/Hydroponics
+          libraries: |
+            - name: Keypad
+            - name: DHTlib
+            - name: LiquidCrystal
+          enable-warnings-report: true
