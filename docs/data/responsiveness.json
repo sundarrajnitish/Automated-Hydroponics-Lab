@@ -1,0 +1,1 @@
+{"summary":{"pressed":60,"caught":60,"caught_pct":100.0,"latency_mean_ms":0.06,"latency_max_ms":0.06,"loop_max_ms":24.1,"loops_per_s":929},"histogram":{"edges_ms":[0.25,0.5,1,2,5,10,20,50],"counts":[55604,12,48,1,24,6,0,30,0]}}

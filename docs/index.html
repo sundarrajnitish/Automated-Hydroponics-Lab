@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hydroponinator Lab</title>
+<meta name="description" content="An automated hydroponics controller for the Arduino Mega, explained from the chemistry up: run the real firmware on a simulated reservoir in your browser.">
+<meta name="author" content="Nitish Sundarraj">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Doto:wght@700..900&family=IBM+Plex+Mono:wght@400;500&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<link rel="stylesheet" href="css/site.css">
+</head>
+<body>
+<header class="site-head">
+  <div class="in">
+    <a class="brand" href="#top">HYDROPONINATOR<span>/</span>LAB</a>
+    <nav class="chapters" aria-label="Chapters">
+      <a href="#rig">1 Rig</a><a href="#chemistry">2 Chemistry</a><a href="#sensor">3 Sensor</a><a href="#dosing">4 Dosing</a><a href="#timing">5 Timing</a><a href="#simulator">6 Run it</a><a href="#findings">7 Results</a><a href="#method">8 Method</a>
+    </nav>
+    <button class="theme-btn" id="theme-btn" type="button" aria-label="Switch colour theme">theme</button>
+  </div>
+</header>
+
+<main id="top">
+<section class="hero">
+  <div>
+    <p class="eyebrow">Arduino Mega 2560 · NFT hydroponics</p>
+    <h1>Hydroponinator: a grow rack that <em>looks after itself</em></h1>
+    <p class="lede">A soil-free grow rack with PVC channels, a 12-litre reservoir, grow lights, dosing pumps, a keypad and a 16×2 LCD, and the firmware that keeps the water right. The controller on this page is the real Arduino sketch, compiled unmodified and running against a simulated reservoir: press its keys, speed up time, break its sensors, and watch what it does.</p>
+    <div class="meta"><span>Designed and built by <b>Nitish Sundarraj</b></span><span>C++ firmware · WebAssembly simulator · Python analysis</span></div>
+    <div class="hero-cta">
+      <a class="btn primary" href="#simulator">Run the rig</a>
+      <a class="btn" href="#findings">See the results</a>
+      <a class="btn" href="https://github.com/sundarrajnitish/Automated-Hydroponics-Lab">Source on GitHub</a>
+    </div>
+  </div>
+  <div class="hero-live" style="display:grid;gap:10px">
+    <div id="hero-panel"></div>
+    <div class="controls" style="justify-content:space-between">
+      <div class="seg" id="hero-speed" role="group" aria-label="Simulation speed">
+        <button type="button" data-s="1" aria-pressed="true">real time</button>
+        <button type="button" data-s="60">1 min/s</button>
+        <button type="button" data-s="3600">1 h/s</button>
+      </div>
+      <span class="small muted" id="hero-truth">true pH —</span>
+    </div>
+    <p class="small muted">The firmware booting on a virtual Mega. Click the keys, or focus the panel and type: <kbd>C</kbd> opens the monitor pages, <kbd>#</kbd> flips through them, <kbd>B</kbd> switches to manual.</p>
+  </div>
+</section>
+
+<!-- ============================================================ 1 RIG -->
+<section class="chapter" id="rig">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 1</span>
+    <h2>The rig</h2>
+    <p class="muted">What the controller switches, what it measures, and where each part is wired.</p>
+  </div>
+  <div class="photo-strip">
+    <figure><img src="img/rig.jpg" alt="The build: PVC channels with plants in net cups under a magenta grow light, controller on top of a black frame" loading="lazy"><figcaption>The build: nutrient solution flows down angled PVC channels and drains back to the reservoir.</figcaption></figure>
+    <figure><img src="img/electronics.jpg" alt="Arduino Mega on the bench with a 16x2 LCD on a breadboard, a pH amplifier board and a 4-channel relay module" loading="lazy"><figcaption>Mega, 16×2 LCD, pH amplifier board and the blue 4-channel relay module.</figcaption></figure>
+    <figure><img src="img/controls.jpg" alt="4x4 membrane keypad, relay module and a 12 V switching supply mounted on the frame" loading="lazy"><figcaption>Membrane keypad, relay board and the 12 V supply on top of the frame.</figcaption></figure>
+  </div>
+  <div class="two rig-two">
+    <div class="schematic panel">
+      <div class="panel-head"><h3>Wiring, live</h3><span class="small muted">parts light up when the controller above switches them on</span></div>
+      <svg viewBox="0 0 720 440" role="img" aria-labelledby="sch-t">
+        <title id="sch-t">Schematic of the hydroponics rig: controller, lights, channels, reservoir, pumps and sensors</title>
+        <!-- lights -->
+        <g class="part" data-part="grow" data-load="grow_light"><rect class="outline lamp" x="210" y="24" width="300" height="16" rx="3"/><text x="360" y="18" text-anchor="middle">grow light · D13 relay</text><g class="rays"><line x1="260" y1="46" x2="250" y2="80"/><line x1="360" y1="46" x2="360" y2="80"/><line x1="460" y1="46" x2="470" y2="80"/></g></g>
+        <g class="part" data-part="fluo" data-load="fluo_light"><rect class="outline lamp" x="540" y="30" width="150" height="10" rx="5"/><text x="615" y="22" text-anchor="middle">fluorescent · D14</text></g>
+        <!-- channels -->
+        <g class="part" data-part="channels"><path class="outline pipe" d="M190 110 L560 138 L560 150 L190 122 Z"/><path class="outline pipe" d="M560 190 L190 218 L190 230 L560 202 Z"/>
+          <path class="outline pipe" d="M552 150 L552 190 L566 190 L566 150 Z"/><path class="flow" d="M200 116 L556 144 L558 196 L200 224"/>
+          <g class="cups"><circle cx="260" cy="113" r="9"/><circle cx="360" cy="121" r="9"/><circle cx="460" cy="129" r="9"/><circle cx="300" cy="214" r="9"/><circle cx="420" cy="205" r="9"/></g>
+          <text x="375" y="102" text-anchor="middle">NFT channels, 1-2° slope</text></g>
+        <!-- return -->
+        <path class="pipe-line" d="M190 224 L150 224 L150 300"/>
+        <!-- reservoir -->
+        <g class="part" data-part="tank"><rect class="outline tank" x="60" y="300" width="230" height="120" rx="6"/><rect class="water" x="62" y="330" width="226" height="88" rx="4"/><text x="175" y="436" text-anchor="middle">reservoir 12 L (14 L tank)</text></g>
+        <g class="part" data-part="pump" data-load="pump"><rect class="outline box" x="220" y="370" width="46" height="36" rx="4"/><text x="243" y="393" text-anchor="middle" class="in">P</text><path class="pipe-line" d="M243 370 L243 260 L600 260 L600 150 L566 150"/><text x="420" y="254" text-anchor="middle">40 W pump · D10 relay</text></g>
+        <g class="part" data-part="ph"><line class="outline probe" x1="100" y1="280" x2="100" y2="400"/><circle class="outline box" cx="100" cy="400" r="7"/><text x="100" y="274" text-anchor="middle">pH probe · A1</text></g>
+        <g class="part" data-part="level"><rect class="outline box" x="136" y="316" width="10" height="100" rx="2"/><text x="182" y="316">level · A2</text></g>
+        <!-- dosing -->
+        <g class="part" data-part="phdown" data-load="ph_down"><rect class="outline bottle" x="330" y="330" width="44" height="70" rx="6"/><text x="352" y="370" text-anchor="middle" class="in">pH−</text><path class="pipe-line" d="M352 330 L352 306 L270 306 L270 330"/><text x="352" y="416" text-anchor="middle">D11</text></g>
+        <g class="part" data-part="nutrient" data-load="nutrient"><rect class="outline bottle" x="390" y="330" width="44" height="70" rx="6"/><text x="412" y="370" text-anchor="middle" class="in">A+B</text><path class="pipe-line" d="M412 330 L412 296 L280 296 L280 330"/><text x="412" y="416" text-anchor="middle">D12</text></g>
+        <!-- air -->
+        <g class="part" data-part="fan" data-load="fan"><circle class="outline box" cx="650" cy="330" r="30"/><path class="blade" d="M650 330 L650 304 M650 330 L673 343 M650 330 L627 343"/><text x="650" y="378" text-anchor="middle">fan · D15</text></g>
+        <g class="part" data-part="humid" data-load="humidifier"><rect class="outline box" x="508" y="306" width="50" height="48" rx="6"/><text x="533" y="335" text-anchor="middle" class="in">mist</text><text x="533" y="378" text-anchor="middle">humidifier · D16</text></g>
+        <g class="part" data-part="dht"><rect class="outline box" x="470" y="398" width="34" height="24" rx="3"/><text x="487" y="414" text-anchor="middle" class="in">DHT</text><text x="487" y="436" text-anchor="middle">DHT11 · A0</text></g>
+        <!-- controller -->
+        <g class="part" data-part="mega"><rect class="outline box" x="20" y="60" width="140" height="120" rx="6"/><text x="90" y="82" text-anchor="middle" class="in">Arduino Mega</text><rect class="lcdmini" x="34" y="94" width="112" height="28" rx="2"/><g class="kp"><rect x="50" y="130" width="80" height="40" rx="3"/></g><text x="90" y="198" text-anchor="middle">LCD 43-53 · keypad 2-9</text></g>
+      </svg>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Parts and pins</h3><span class="small muted">pick one to find it</span></div>
+      <div class="parts-list" id="parts-list">
+        <button type="button" data-part="mega"><span class="pin">MEGA</span><span class="desc"><b>Arduino Mega 2560.</b> Runs the sketch. 16×2 HD44780 LCD in 4-bit mode on pins 43-53, 4×4 membrane keypad on 2-9.</span></button>
+        <button type="button" data-part="pump"><span class="pin">D10 · LOW</span><span class="desc"><b>Circulation pump, 40 W.</b> Lifts solution to the top channel. On a relay that closes when its input is pulled LOW.</span></button>
+        <button type="button" data-part="phdown"><span class="pin">D11 · HIGH</span><span class="desc"><b>pH-down pump.</b> A small sump pump behind a transistor, about 20 mL/s of diluted acid.</span></button>
+        <button type="button" data-part="nutrient"><span class="pin">D12 · HIGH</span><span class="desc"><b>Nutrient pump.</b> Doses A+B concentrate. Manual only: the rig has no EC probe.</span></button>
+        <button type="button" data-part="grow"><span class="pin">D13 · LOW</span><span class="desc"><b>Full-spectrum grow light</b> (the magenta glow in the photo), on a relay.</span></button>
+        <button type="button" data-part="fluo"><span class="pin">D14 · LOW</span><span class="desc"><b>Fluorescent tubes</b>, supplemental light, on a relay.</span></button>
+        <button type="button" data-part="fan"><span class="pin">D15 · LOW</span><span class="desc"><b>Ventilation fan</b>, on the fourth relay.</span></button>
+        <button type="button" data-part="humid"><span class="pin">D16 · HIGH</span><span class="desc"><b>Humidifier.</b> Switched on below 45 %RH and off above 55 %RH, never while the fan runs.</span></button>
+        <button type="button" data-part="ph"><span class="pin">A1</span><span class="desc"><b>pH electrode + amplifier board.</b> Outputs about 2.0 V at pH 7 and 0.29 V per pH unit.</span></button>
+        <button type="button" data-part="level"><span class="pin">A2</span><span class="desc"><b>Resistive water-level strip.</b> Below 25 % the pump and the dosing pumps are locked out until the tank is topped up.</span></button>
+        <button type="button" data-part="dht"><span class="pin">A0</span><span class="desc"><b>DHT11</b> air temperature (1 °C steps) and humidity (1 % steps).</span></button>
+      </div>
+      <p class="small muted">LOW / HIGH is the level that switches the load <em>on</em>: the 4-channel relay board is active-LOW, the transistor drivers active-HIGH. Both are set per channel in <code>config.h</code>, and every pin is parked at its OFF level before it becomes an output, so nothing clicks on while the board boots.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 2 CHEMISTRY -->
+<section class="chapter" id="chemistry">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 2</span>
+    <h2>Why the pH keeps climbing</h2>
+  </div>
+  <div class="prose">
+    <p>Roots take up nitrate (NO₃⁻) faster than any other ion. To stay electrically neutral they push out bicarbonate and hydroxide, so a healthy crop drives the solution <strong>alkaline</strong>, a few tenths of a pH unit per day. Above about 6.5, iron and manganese come out of solution and the plants starve with the nutrients sitting in the water. The job of the controller is to add small amounts of acid, often and carefully.</p>
+    <p>How much acid it takes depends on the <strong>buffer</strong>: weak acids like phosphate and dissolved CO₂ soak up added H⁺ near their pK<sub>a</sub>. And CO₂ adds a twist. Acid turns bicarbonate into CO₂, which stays dissolved for a while and then escapes to the air over hours, so the pH drops right after a dose and then creeps back up. Explore it below; the curves come from the same chemistry code the simulator uses.</p>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <div class="panel-head"><h3>Titrating the reservoir</h3><span class="small muted">12 L tank, 50 mM pH-down</span></div>
+      <div class="controls">
+        <label class="field" for="ch-start">starting pH <output id="ch-start-o">7.6</output><input id="ch-start" type="range" min="6.2" max="8.4" step="0.1" value="7.6"></label>
+        <label class="field" for="ch-buf">phosphate buffer <output id="ch-buf-o">3.0 mM</output><input id="ch-buf" type="range" min="0.5" max="8" step="0.5" value="3"></label>
+        <label class="field" for="ch-acid">acid added <output id="ch-acid-o">150 mL</output><input id="ch-acid" type="range" min="0" max="600" step="5" value="150"></label>
+      </div>
+      <div id="ch-chart"></div>
+      <div id="ch-legend"></div>
+      <div class="stats" id="ch-stats"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>What the roots can reach</h3><span class="small muted">relative nutrient availability used in the growth model</span></div>
+      <div id="avail-chart"></div>
+      <div class="ph-scale" aria-hidden="true"></div>
+      <div class="ph-ticks" aria-hidden="true"><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span></div>
+      <p class="small muted">The plateau between 5.6 and 6.4 is where most crops take up every nutrient they need. The strip underneath is the colour a universal indicator would turn at each pH.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 3 SENSOR -->
+<section class="chapter" id="sensor">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 3</span>
+    <h2>From a glass bulb to a number</h2>
+  </div>
+  <div class="prose">
+    <p>A pH electrode is a tiny battery: about <strong>−59 mV per pH unit</strong> at 25 °C, zero at pH 7. The amplifier board shifts and scales that into 0-5 V for the Mega's 10-bit ADC, where one step is 4.9 mV, about 0.017 pH. The firmware takes a sample every 100 ms, sorts each batch of ten, averages the middle six, and then takes the median of the last five one-second readings, so a single spike never reaches the dosing logic.</p>
+    <p>Every amplifier board has its own offset and gain, so the conversion to pH comes from a <strong>two-point calibration</strong> in pH 7 and pH 4 buffers, stored in EEPROM. Move the sliders and follow a reading through the chain.</p>
+  </div>
+  <div class="panel">
+    <div class="controls">
+      <label class="field" for="sn-ph">true pH in the tank <output id="sn-ph-o">6.00</output><input id="sn-ph" type="range" min="3" max="10" step="0.01" value="6"></label>
+      <label class="field" for="sn-off">board offset <output id="sn-off-o">+0.30 pH</output><input id="sn-off" type="range" min="-0.6" max="0.6" step="0.05" value="0.3"></label>
+      <label class="field" for="sn-slope">board gain error <output id="sn-slope-o">+6 %</output><input id="sn-slope" type="range" min="-12" max="12" step="1" value="6"></label>
+      <button class="btn small" type="button" id="sn-cal">Calibrate in pH 7 and pH 4 buffers</button>
+    </div>
+    <div class="chain" id="sn-chain"></div>
+    <div class="cmp">
+      <div class="cmp-col">
+        <span class="tag"><i style="background:var(--s-aqua)"></i>Hydroponics.ino · sampling</span>
+<pre class="code" id="sn-code-a"></pre>
+      </div>
+      <div class="cmp-col">
+        <span class="tag"><i style="background:var(--s-blue)"></i>hydro_core.cpp · conversion</span>
+<pre class="code" id="sn-code-b"></pre>
+        <div class="verdict" id="sn-verdict"></div>
+      </div>
+    </div>
+  </div>
+  <div class="two">
+    <div class="panel">
+      <div class="panel-head"><h3>Reported vs true pH</h3><span class="small muted">measured on the simulated board, pH 4.0 to 8.9</span></div>
+      <div id="sweep-chart"></div>
+      <div id="sweep-legend"></div>
+    </div>
+    <div class="prose" style="align-content:start">
+      <p>The factory conversion (3.5 pH per volt, no offset) leaves this board <span data-f="calibration.default.max_error">0.79</span> pH out, enough to hold the tank near 6.7 while the display says 6.0. After calibration the error is <span data-f="calibration.calibrated.max_error">0.04</span> pH across the whole range.</p>
+      <p>The wizard is on the keypad: <kbd>C</kbd>, then <kbd>0</kbd>. It only accepts a buffer reading once six consecutive one-second readings agree within 10 mV, rejects a pair whose slope is outside 70-130 % of nominal (mixed-up or exhausted buffers), and stores the result with a CRC-8 so a corrupted EEPROM falls back to safe defaults.</p>
+      <p>Two more checks protect the tank. A reading pinned to either end of the ADC means an unplugged electrode or a shorted amplifier. And a nutrient tank open to the air cannot sit above about pH 9, so any reading up there is treated as a sensor fault, not as a reason to dose.</p>
+    </div>
+  </div>
+</section>
+
+<!-- =========================================================== 4 DOSING -->
+<section class="chapter" id="dosing">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 4</span>
+    <h2>Dosing into a lag</h2>
+  </div>
+  <div class="prose">
+    <p>Acid lands in one corner of the tank. The pump needs tens of seconds to carry it around, the electrode needs a few more to respond, and the CO₂ released by the acid keeps leaving for hours afterwards. A controller that keeps pumping until the reading changes always pumps too much. This one never chases the reading. It doses, waits, measures, and learns how this particular tank responds.</p>
+  </div>
+  <div class="steps">
+    <div><span class="k">1 · trigger</span><span class="t">pH rises above 6.3</span><p>Corrections start above 6.3 and continue until the tank is back at 6.0, so the pump is not toggled around a single threshold.</p></div>
+    <div><span class="k">2 · dose</span><span class="t">0.2 to 3 s of pH-down</span><p>Length = (pH − 6.0) ÷ learned response × 0.8. Aiming 20 % short means a wrong estimate undershoots instead of overshooting.</p></div>
+    <div><span class="k">3 · mix</span><span class="t">150 s of circulation</span><p>The main pump is forced on so the acid reaches the electrode before anything is judged.</p></div>
+    <div><span class="k">4 · learn</span><span class="t">update the response</span><p>The measured drop per second of pumping is averaged into the estimate. Three doses with no effect lock dosing out and raise an alarm.</p></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head">
+      <h3>Correcting a tank filled with hard tap water</h3>
+      <div class="controls">
+        <div class="seg" id="ds-speed" role="group" aria-label="Speed"><button type="button" data-s="20">20×</button><button type="button" data-s="60" aria-pressed="true">60×</button><button type="button" data-s="240">240×</button></div>
+        <button class="btn small primary" type="button" id="ds-run">Run live</button>
+      </div>
+    </div>
+    <div class="controls">
+      <label class="field" for="ds-start">starting pH <output id="ds-start-o">7.9</output><input id="ds-start" type="range" min="6.6" max="8.4" step="0.1" value="7.9"></label>
+      <label class="field" for="ds-mix">mixing time constant <output id="ds-mix-o">35 s</output><input id="ds-mix" type="range" min="10" max="120" step="5" value="35"></label>
+      <label class="field" for="ds-acid">pH-down strength <output id="ds-acid-o">50 mM</output><input id="ds-acid" type="range" min="20" max="120" step="10" value="50"></label>
+    </div>
+    <div id="ds-chart"></div>
+    <div id="ds-legend"></div>
+    <div class="stats" id="ds-stats"></div>
+    <p class="small muted" id="ds-note">Showing the recorded 3-hour run. Press <b>Run live</b> to run the firmware now with your settings: try a weaker or stronger acid and watch it relearn the response.</p>
+  </div>
+</section>
+
+<!-- =========================================================== 5 TIMING -->
+<section class="chapter" id="timing">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 5</span>
+    <h2>A loop that never waits</h2>
+  </div>
+  <div class="prose">
+    <p>The Keypad library only sees a key if <code>getKey()</code> runs while the key is down, and a dosing pump left running for an extra second is 20 mL of acid. So the firmware contains no <code>delay()</code> at all. Every job runs on its own timer inside <code>loop()</code>, and the controller decides everything from the readings it is handed, in well under a millisecond.</p>
+  </div>
+  <div class="two">
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>job</th><th>runs</th><th>cost on the Mega</th></tr></thead>
+        <tbody>
+          <tr><td>keypad scan</td><td class="num">every pass</td><td class="num">~60 µs</td></tr>
+          <tr><td>pH sample</td><td class="num">every 100 ms</td><td class="num">112 µs ADC</td></tr>
+          <tr><td>water level</td><td class="num">every 500 ms</td><td class="num">112 µs ADC</td></tr>
+          <tr><td>DHT11 read</td><td class="num">every 2 s</td><td class="num">~23 ms (the longest job)</td></tr>
+          <tr><td>controller step</td><td class="num">every pass</td><td class="num">&lt; 1 ms</td></tr>
+          <tr><td>LCD update</td><td class="num">200 ms, or on a key</td><td class="num">0.25 ms per changed character</td></tr>
+          <tr><td>CSV telemetry</td><td class="num">every 5 s</td><td class="num">buffered UART, 115200 baud</td></tr>
+          <tr><td>watchdog</td><td class="num">every pass</td><td class="num">resets the board after 4 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>How long one pass of <code>loop()</code> takes</h3><span class="small muted">one minute while correcting a high pH</span></div>
+      <div class="bars" id="hist"></div>
+      <div class="stats" id="tm-stats"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h3>Every call to <code>getKey()</code> in 12 seconds</h3><span class="small muted">measured live on the simulated board; each tick is one call</span></div>
+    <div class="timeline">
+      <div class="tl-row"><span><i class="led" style="display:inline-block;background:var(--s-blue)"></i> firmware<br><b id="tl-fw-n">…</b></span><canvas id="tl-fw" height="34"></canvas></div>
+      <div class="tl-row"><span></span><div class="ph-ticks"><span>0 s</span><span>3 s</span><span>6 s</span><span>9 s</span><span>12 s</span></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================== 6 SIMULATOR -->
+<section class="chapter" id="simulator">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 6</span>
+    <h2>Run the rig</h2>
+    <p class="muted">Speed time up, top up the tank, calibrate the probe, break things. Everything below is computed live by the compiled firmware.</p>
+  </div>
+  <div class="controls">
+    <div class="seg" id="sim-speed" role="group" aria-label="Speed"><button type="button" data-s="1">real time</button><button type="button" data-s="60">1 min/s</button><button type="button" data-s="3600" aria-pressed="true">1 h/s</button><button type="button" data-s="21600">6 h/s</button></div>
+    <button class="btn small" type="button" id="sim-pause" aria-pressed="false">Pause</button>
+    <button class="btn small" type="button" id="sim-reset">Restart</button>
+    <label class="field" for="sim-board"><span><input id="sim-board" type="checkbox"> perfect pH board (no calibration needed)</span></label>
+  </div>
+  <div class="sim-grid">
+    <div class="sim-side">
+      <div id="sim-panel"></div>
+      <div class="panel">
+        <h3>Operator</h3>
+        <div class="actions">
+          <button class="btn small" type="button" data-act="refill">Top up water</button>
+          <button class="btn small" type="button" data-act="evap">Heat wave: fast evaporation</button>
+        </div>
+        <h3>pH probe</h3>
+        <div class="actions">
+          <button class="btn small" type="button" data-act="buf7">Into pH 7 buffer</button>
+          <button class="btn small" type="button" data-act="buf4">Into pH 4 buffer</button>
+          <button class="btn small" type="button" data-act="tank">Back in the tank</button>
+        </div>
+        <p class="small muted">To calibrate: untick "perfect pH board", press <kbd>C</kbd>, then <kbd>0</kbd>. Put the probe in pH 7, wait for <code>#=OK</code>, press <kbd>#</kbd>; repeat with pH 4; put it back in the tank.</p>
+        <h3>Faults</h3>
+        <div class="actions">
+          <button class="btn small" type="button" data-act="stuck">Amplifier stuck high</button>
+          <button class="btn small" type="button" data-act="stuck69">Probe frozen at 6.9</button>
+          <button class="btn small" type="button" data-act="unplug">Unplug probe</button>
+          <button class="btn small" type="button" data-act="fix">Repair probe</button>
+          <button class="btn small" type="button" data-act="dht">Break DHT11</button>
+        </div>
+      </div>
+    </div>
+    <div class="sim-side">
+      <div class="panel">
+        <div class="panel-head"><h3>Reservoir</h3><span id="sim-alarms"></span></div>
+        <div class="stats" id="sim-stats"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>pH, last 48 hours</h3><span class="small muted" id="sim-rate"></span></div>
+        <div id="sim-ph"></div>
+        <div id="sim-ph-legend"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Water level</h3><span class="small muted">air temperature and humidity are in the readings above</span></div>
+        <div id="sim-env"></div>
+        <div id="sim-env-legend"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head"><h3>Serial monitor</h3><span class="small muted">CSV telemetry the USB port prints every 5 s</span></div>
+        <pre class="serial" id="sim-serial" aria-live="off"></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================================================== 7 RESULTS -->
+<section class="chapter" id="findings">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 7</span>
+    <h2>Results</h2>
+    <p class="muted">Every number here comes from <code>python -m hydrolab</code>, which drives the same compiled firmware through scripted scenarios. The growth index is a model output, not a yield prediction.</p>
+  </div>
+  <div class="cards">
+    <div class="headline"><span class="eyebrow">pH in 5.5-6.5, 14 days</span><span class="big"><span data-f="grow.in_band_pct">100</span>%</span><p>Held between <span data-f="grow.ph_min" data-d="2">6.0</span> and <span data-f="grow.ph_max" data-d="2">6.32</span> with <span data-f="grow.corrections">21</span> corrections, about <span data-f="grow.acid_mL_per_day">95</span> mL of pH-down a day.</p></div>
+    <div class="headline"><span class="eyebrow">energy, 14 days</span><span class="big"><span data-f="grow.energy_kWh">26.1</span> kWh</span><p><span data-f="grow.lights_h_per_day">16</span> h of light a day and the 40 W pump cycled for <span data-f="grow.pump_h_per_day">13.4</span> h; economy mode cuts both further.</p></div>
+    <div class="headline"><span class="eyebrow">from pH 7.9 to the band</span><span class="big"><span data-f="dosing.minutes_to_band">23</span> min</span><p><span data-f="dosing.doses">13</span> doses, lowest point pH <span data-f="dosing.ph_min" data-d="2">6.0</span>: no overshoot, and within 4 % of the acid the chemistry says is needed.</p></div>
+    <div class="headline"><span class="eyebrow">faults contained</span><span class="big"><span data-f="faults.stuck_high.acid_mL">0</span> mL · <span data-f="low_water.dry_run_h">0</span> h</span><p>No acid dosed on a failed amplifier; the pump never ran dry, stopping at <span data-f="low_water.level_at_alarm_pct">21.8</span> % water.</p></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-head"><h3>Two weeks of reservoir pH</h3><span class="small muted">calibrated probe, weekly top-up with tap water</span></div>
+    <div id="gr-chart"></div>
+    <div id="gr-legend"></div>
+    <div class="stats" id="gr-stats"></div>
+  </div>
+
+  <div class="two">
+    <div class="panel">
+      <div class="panel-head"><h3>Left to evaporate</h3><span class="small muted">no top-up during a hot spell</span></div>
+      <div id="lw-chart"></div>
+      <div id="lw-legend"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h3>Faulty probes</h3><span class="small muted">6 hours after the fault</span></div>
+      <div class="table-wrap" style="border:0">
+        <table>
+          <thead><tr><th>fault</th><th>acid dosed</th><th>alarm after</th><th>what the LCD shows</th></tr></thead>
+          <tbody id="ft-table"></tbody>
+        </table>
+      </div>
+      <p class="small muted">A probe frozen at a believable value cannot be told apart from a real reading until a dose fails to move it. The firmware then retries with the smallest pulse and stops after three: <span data-f="faults.stuck_plausible.acid_mL">76</span> mL in total.</p>
+    </div>
+  </div>
+
+  <h3>Protections built into the firmware</h3>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>protection</th><th>what it prevents</th><th>checked by</th></tr></thead>
+      <tbody>
+        <tr><td>Outputs parked OFF before <code>pinMode(OUTPUT)</code>; per-channel relay polarity</td><td>Pump, lights or acid pump clicking on while the board boots</td><td><code>test_nothing_clicks_on_during_boot</code></td></tr>
+        <tr><td>Low-water interlock with hysteresis; an unknown level counts as low</td><td>A 40 W pump running dry</td><td><code>test_low_water_interlock</code></td></tr>
+        <tr><td>ADC-rail and plausibility checks on every pH reading</td><td>Dosing on a disconnected or saturated probe</td><td><code>test_stuck_probe_is_contained</code></td></tr>
+        <tr><td>Three unanswered doses lock dosing out until A or D is pressed</td><td>Emptying the acid bottle on a frozen probe or an empty bottle</td><td><code>test_no_response_lockout</code></td></tr>
+        <tr><td>Daily pH-down allowance (40 s of pumping)</td><td>Runaway dosing for any reason nobody thought of</td><td><code>test_budget_and_midnight</code></td></tr>
+        <tr><td>No dosing during calibration or for 30 s after</td><td>Dosing on a buffer reading while the probe is out of the tank</td><td><code>test_calibration_blocks_dosing</code></td></tr>
+        <tr><td>Manual dosing pumps switch themselves off after 10 s</td><td>A pump left on by hand</td><td><code>test_manual_dosing_pump_switches_itself_off</code></td></tr>
+        <tr><td>DHT11 silent for 30 s: fan on, humidifier off, alarm</td><td>Humidifying blind in a hot, wet room</td><td><code>test_blind_climate_control_fails_safe</code></td></tr>
+        <tr><td>Program and calibration in EEPROM with CRC-8; 4 s watchdog</td><td>Losing the setup after a power cut or a hang</td><td><code>test_calibration_and_program_survive_a_reset</code></td></tr>
+        <tr><td>No <code>delay()</code>; timed jobs; worst pass ~25 ms</td><td>Missed key presses and late pump shut-offs</td><td><code>test_loop_never_blocks</code></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- =========================================================== 8 METHOD -->
+<section class="chapter" id="method">
+  <div class="chapter-head">
+    <span class="num">CHAPTER 8</span>
+    <h2>How the simulation works</h2>
+  </div>
+  <div class="arch">
+    <div><span class="k">firmware</span><span class="t">The sketch, unmodified</span><p><code>firmware/Hydroponics</code>. The sketch is a thin hardware layer; every decision lives in <code>hydro_core</code>, plain C++ with no Arduino calls, unit-tested on a PC.</p></div>
+    <div><span class="k">virtual board</span><span class="t">A mock Arduino core</span><p><code>digitalWrite</code>, <code>analogRead</code>, <code>millis</code>, the LCD, keypad, DHT11, EEPROM and watchdog, each costing the time it costs on a Mega.</p></div>
+    <div><span class="k">plant</span><span class="t">A reservoir and a room</span><p>Charge balance with phosphate and carbonate, slow CO₂ exchange, two-zone mixing, electrode lag, ADC noise, evaporation, a daily climate cycle and a growth index.</p></div>
+  </div>
+  <div class="prose">
+    <p>The same C++ is compiled twice: natively for the Python analysis and the test suite, and to WebAssembly for this page. With fused multiply-add disabled and a small deterministic maths library, both builds produce <strong>bit-identical</strong> results, and a test checks that on every commit.</p>
+    <p>Tests: 16 groups of host unit tests on the controller (with address and undefined-behaviour sanitizers and a randomised invariant run) and a pytest suite that drives the full sketch on the virtual rig. CI also compiles the sketch for the Mega, where it uses 21.4 KB of flash and 1.7 KB of RAM.</p>
+    <p><strong>Limits.</strong> The reservoir and crop parameters are plausible for a small indoor rig rather than measured, so read the numbers as the controller's behaviour under realistic, repeatable conditions, not as agronomy.</p>
+  </div>
+  <div class="panel">
+    <h3>Run it yourself</h3>
+<pre class="code">git clone https://github.com/sundarrajnitish/Automated-Hydroponics-Lab
+cd Automated-Hydroponics-Lab
+make -C firmware/test            <span class="c"># controller unit tests</span>
+pip install -r requirements.txt
+pytest                           <span class="c"># the sketch on the virtual rig</span>
+python -m hydrolab               <span class="c"># every experiment -> results/ and docs/data/</span></pre>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <span>Hydroponinator, designed and built by Nitish Sundarraj.</span>
+  <span><a href="https://github.com/sundarrajnitish/Automated-Hydroponics-Lab">github.com/sundarrajnitish/Automated-Hydroponics-Lab</a></span>
+</footer>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
